@@ -19,6 +19,8 @@ import helpdeskRoutes from './routes/helpdesk.js';
 import feedbackRoutes from './routes/feedback.js';
 import sequelize from './config/database.js';
 import Visitor from './models/Visitor.js';
+import Admin from './models/Admin.js';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -96,8 +98,25 @@ sequelize.authenticate()
     console.log('✅ PostgreSQL Connected');
     return sequelize.sync({ alter: isProduction });
   })
-  .then(() => {
+  .then(async () => {
     console.log('✅ Database Synced');
+    
+    // Auto-create Admin for Production/First Run
+    try {
+      const adminCount = await Admin.count();
+      if (adminCount === 0) {
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await Admin.create({
+          username: 'admin',
+          password: hashedPassword,
+          full_name: 'System Admin',
+          email: 'admin@pcu.edu'
+        });
+        console.log('🎁 Initial Admin Account Created: username: admin, password: admin123');
+      }
+    } catch (adminErr) {
+      console.error('Error creating initial admin:', adminErr);
+    }
   })
   .catch(err => {
     console.error('❌ Database Connection Error:', err);
