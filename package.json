@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:full": "npm install && cd backend && npm install && cd .. && vite build",
+    "build:full": "npm install && npm install --include=dev && cd backend && npm install && cd .. && npx vite build",
     "prestart": "npm run build",
     "start": "node backend/server.js",
     "postinstall": "cd backend && npm install",
