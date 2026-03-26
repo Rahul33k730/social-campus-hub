@@ -103,9 +103,9 @@ const StudentFun = () => {
     }
   };
 
-  const initiateCall = (partnerId) => {
+  const createPeer = (partnerId, initiator) => {
     const peer = new Peer({
-      initiator: true,
+      initiator,
       stream: stream,
     });
 
@@ -119,33 +119,34 @@ const StudentFun = () => {
       }
     });
 
-    peerRef.current = peer;
+    peer.on('connect', () => {
+      console.log('Peer connection established');
+    });
+
+    peer.on('error', (err) => {
+      console.error('Peer connection error:', err);
+      endCall();
+    });
+
+    peer.on('close', () => {
+      console.log('Peer connection closed');
+      endCall();
+    });
+
+    return peer;
+  };
+
+  const initiateCall = (partnerId) => {
+    peerRef.current = createPeer(partnerId, true);
   };
 
   const acceptCall = () => {
     setStatus('in_call');
-    
-    const peer = new Peer({
-      initiator: false,
-      stream: stream,
-    });
-
-    peer.on('signal', (data) => {
-      socketRef.current.emit('signal', { to: partnerIdRef.current, signal: data });
-    });
-
-    peer.on('stream', (partnerStream) => {
-      if (partnerVideo.current) {
-        partnerVideo.current.srcObject = partnerStream;
-      }
-    });
-
+    peerRef.current = createPeer(partnerIdRef.current, false);
     if (offerSignal) {
-      peer.signal(offerSignal);
+      peerRef.current.signal(offerSignal);
       setOfferSignal(null);
     }
-
-    peerRef.current = peer;
   };
 
   const skipCall = () => {
@@ -159,11 +160,12 @@ const StudentFun = () => {
   };
 
   const endCall = () => {
-    if (partnerIdRef.current) {
+    if (socketRef.current && partnerIdRef.current) {
       socketRef.current.emit('end_call', { to: partnerIdRef.current });
     }
     
     if (peerRef.current) {
+      peerRef.current.removeAllListeners();
       peerRef.current.destroy();
     }
     
