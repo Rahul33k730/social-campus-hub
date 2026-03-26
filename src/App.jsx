@@ -21,6 +21,7 @@ import StudentFun from './pages/student/Fun';
 import StudentNotes from './pages/student/Notes';
 import StudentPrinting from './pages/student/Printing';
 import StudentHelpdesk from './pages/student/Helpdesk';
+import StudentEssentials from './pages/student/Essentials';
 
 // Admin Modules
 import AdminPrintOrders from './pages/admin/PrintOrders';
@@ -50,6 +51,7 @@ function App() {
               <Route path="/student/helpdesk" element={<StudentHelpdesk />} />
               <Route path="/student/talent" element={<StudentTalentExchange />} />
               <Route path="/student/fun" element={<StudentFun />} />
+              <Route path="/student/essentials" element={<StudentEssentials />} />
 
               {/* Faculty Routes */}
               <Route path="/faculty/dashboard" element={<FacultyDashboard />} />

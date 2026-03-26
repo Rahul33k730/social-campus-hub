@@ -47,6 +47,9 @@ const Navbar = () => {
     ...(user?.role === 'student' ? [
       { label: 'Deal', path: '/student/updates', icon: ShoppingBag },
       { label: 'Lost & Found', path: '/student/lost-found', icon: FileText },
+      { label: 'Fun Zone', path: '/student/fun', icon: Video },
+      { label: 'Talent Hub', path: '/student/clubs', icon: Star },
+      { label: 'Essentials', path: '/student/essentials', icon: LifeBuoy },
     ] : []),
     ...(user?.role === 'admin' ? [
       { label: 'Print Queue', path: '/admin/print-orders', icon: Printer },
@@ -59,8 +62,6 @@ const Navbar = () => {
   ];
 
   const essentialsLinks = [
-    { label: 'Fun Zone', path: '/student/fun', icon: Video },
-    { label: 'Talent Hub', path: '/student/clubs', icon: Star },
     { label: 'Helpdesk', path: '/student/helpdesk', icon: HelpCircle },
   ];
 
@@ -119,6 +120,7 @@ const Navbar = () => {
                 </button>
                 {isEssentialsOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-xl py-1 border border-slate-700 animate-in fade-in zoom-in-95 duration-200">
+                    <p className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-700/50">Support</p>
                     {essentialsLinks.map(link => (
                       <Link
                         key={link.path}
