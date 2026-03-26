@@ -24,23 +24,11 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isEssentialsOpen, setIsEssentialsOpen] = useState(false);
-  const essentialsRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (essentialsRef.current && !essentialsRef.current.contains(event.target)) {
-        setIsEssentialsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const navLinks = [
     { label: 'Dashboard', path: `/${user?.role}/dashboard`, icon: Home },
@@ -50,6 +38,7 @@ const Navbar = () => {
       { label: 'Fun Zone', path: '/student/fun', icon: Video },
       { label: 'Talent Hub', path: '/student/clubs', icon: Star },
       { label: 'Essentials', path: '/student/essentials', icon: LifeBuoy },
+      { label: 'Helpdesk', path: '/student/helpdesk', icon: HelpCircle },
     ] : []),
     ...(user?.role === 'admin' ? [
       { label: 'Print Queue', path: '/admin/print-orders', icon: Printer },
@@ -59,10 +48,6 @@ const Navbar = () => {
       { label: 'Printing Queue', path: '/shopkeeper/dashboard', icon: Printer },
       { label: 'Helpdesk', path: '/shopkeeper/helpdesk', icon: HelpCircle },
     ] : []),
-  ];
-
-  const essentialsLinks = [
-    { label: 'Helpdesk', path: '/student/helpdesk', icon: HelpCircle },
   ];
 
   return (
@@ -106,36 +91,6 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-
-            {/* Essentials Dropdown */}
-            {user?.role === 'student' && (
-              <div className="relative" ref={essentialsRef}>
-                <button
-                  onClick={() => setIsEssentialsOpen(!isEssentialsOpen)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${isEssentialsOpen ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                >
-                  <LifeBuoy className="h-4 w-4" />
-                  Essentials
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isEssentialsOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isEssentialsOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-xl py-1 border border-slate-700 animate-in fade-in zoom-in-95 duration-200">
-                    <p className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-700/50">Support</p>
-                    {essentialsLinks.map(link => (
-                      <Link
-                        key={link.path}
-                        to={link.path}
-                        onClick={() => setIsEssentialsOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
-                      >
-                        <link.icon className="h-4 w-4" />
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* User Profile / Logout */}
@@ -189,22 +144,6 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            {user?.role === 'student' && (
-              <div className="border-t border-slate-700 pt-2 mt-2">
-                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Essentials</h3>
-                {essentialsLinks.map(link => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-md text-base font-medium flex items-center gap-3 text-slate-300 hover:bg-slate-700 hover:text-white"
-                  >
-                    <link.icon className="h-5 w-5" />
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
             {user ? (
               <button 
                 onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
