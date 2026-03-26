@@ -136,6 +136,11 @@ app.use('/api/helpdesk', helpdeskRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/essentials', essentialsRoutes);
 
+// Keep-Alive / Health Check Route
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 // Visitor Tracking Route
 app.get('/api/visitor/increment', async (req, res) => {
   try {
