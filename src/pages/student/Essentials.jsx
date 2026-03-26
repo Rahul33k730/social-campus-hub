@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Phone, MapPin, Clock, Search, ExternalLink, HeartPulse, Utensils, Truck } from 'lucide-react';
+import { ShoppingBag, Phone, MapPin, Clock, Search, ExternalLink, HeartPulse, Utensils, Truck, Car } from 'lucide-react';
 
 const Essentials = () => {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -49,6 +49,28 @@ const Essentials = () => {
       timing: "11:00 AM - 11:00 PM",
       deliveryTime: "40-50 mins",
       isOpen: true
+    },
+    {
+      id: 5,
+      name: "Campus Auto Stand",
+      category: "transport",
+      description: "24/7 auto-rickshaw service available right outside the main gate.",
+      phone: "N/A",
+      location: "Main Gate",
+      timing: "24/7",
+      deliveryTime: "Immediate",
+      isOpen: true
+    },
+    {
+      id: 6,
+      name: "City Cab Service",
+      category: "transport",
+      description: "Book cabs for city travel, airport drops, and station pickups.",
+      phone: "+91 99887 76655",
+      location: "Service across city",
+      timing: "24/7",
+      deliveryTime: "10-15 mins wait",
+      isOpen: true
     }
   ];
 
@@ -69,7 +91,7 @@ const Essentials = () => {
           </div>
           <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">Essential Services & Delivery</h1>
           <p className="text-slate-300 text-lg leading-relaxed">
-            Quick access to medical shops and local hotels providing secure delivery directly to your campus location. Special care for girls living inside the campus.
+            Quick access to medical shops, local hotels, and transport providing secure delivery directly to your campus location. Special care for girls living inside the campus.
           </p>
         </div>
         <div className="absolute -right-20 -bottom-20 opacity-10 pointer-events-none">
@@ -79,24 +101,30 @@ const Essentials = () => {
 
       {/* Search and Filter */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 w-full md:w-auto">
+        <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 w-full md:w-auto overflow-x-auto">
           <button 
             onClick={() => setActiveCategory('all')}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             All Services
           </button>
           <button 
             onClick={() => setActiveCategory('medical')}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeCategory === 'medical' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeCategory === 'medical' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <HeartPulse size={16} /> Medical
           </button>
           <button 
             onClick={() => setActiveCategory('hotel')}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeCategory === 'hotel' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeCategory === 'hotel' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <Utensils size={16} /> Hotels
+          </button>
+          <button 
+            onClick={() => setActiveCategory('transport')}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeCategory === 'transport' ? 'bg-amber-500 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+          >
+            <Car size={16} /> Transport
           </button>
         </div>
 
@@ -118,8 +146,8 @@ const Essentials = () => {
           <div key={service.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all overflow-hidden group">
             <div className="p-8">
               <div className="flex justify-between items-start mb-6">
-                <div className={`p-4 rounded-2xl ${service.category === 'medical' ? 'bg-sky-50 text-sky-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                  {service.category === 'medical' ? <HeartPulse size={28} /> : <Utensils size={28} />}
+                <div className={`p-4 rounded-2xl ${service.category === 'medical' ? 'bg-sky-50 text-sky-600' : service.category === 'hotel' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                  {service.category === 'medical' ? <HeartPulse size={28} /> : service.category === 'hotel' ? <Utensils size={28} /> : <Car size={28} />}
                 </div>
                 <div className="flex flex-col items-end">
                   <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider ${service.isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -143,14 +171,15 @@ const Essentials = () => {
                   <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
                     <Truck size={16} />
                   </div>
-                  Delivery in <span className="font-bold text-slate-900">{service.deliveryTime}</span>
+                  {service.category === 'transport' ? 'Availability' : 'Delivery in'} <span className="font-bold text-slate-900">{service.deliveryTime}</span>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <a 
                   href={`tel:${service.phone}`}
-                  className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10"
+                  className={`flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 ${service.phone === 'N/A' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={(e) => service.phone === 'N/A' && e.preventDefault()}
                 >
                   <Phone size={18} /> Call Now
                 </a>
@@ -173,9 +202,9 @@ const Essentials = () => {
           <Truck size={32} />
         </div>
         <div>
-          <h4 className="text-xl font-bold text-sky-900 mb-1">Campus Delivery Support</h4>
+          <h4 className="text-xl font-bold text-sky-900 mb-1">Campus Delivery & Transport</h4>
           <p className="text-sky-700/80 leading-relaxed">
-            For girls living in campus hostels, all deliveries are verified at the gate. Please ensure you share your block and room number clearly with the delivery partner.
+            For girls living in campus hostels, all deliveries are verified at the gate. Please ensure you share your block and room number clearly with the delivery partner. Transport services are available at the main gate.
           </p>
         </div>
       </div>
