@@ -10,12 +10,14 @@ const Login = () => {
   const { login } = useAuth();
   
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
-    username: '',
+    username: '', // This will be email for students
     password: '',
     full_name: '',
     email: '',
@@ -33,23 +35,46 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsLoading(true);
 
-    if (isRegistering && role === 'student' && !formData.email.endsWith('@pcu.edu.in')) {
-      setError('Invalid email. Please use your official college email ending with @pcu.edu.in');
-      setIsLoading(false);
+    // Enforce @pcu.edu.in for students
+    if (role === 'student') {
+      const emailToCheck = isRegistering ? formData.email : formData.username;
+      if (!emailToCheck.endsWith('@pcu.edu.in')) {
+        setError('Invalid email. Please use your official college email ending with @pcu.edu.in');
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    if (isForgotPassword) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.username, role })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setSuccess(data.message);
+          setIsForgotPassword(false);
+        } else {
+          setError(data.message);
+        }
+      } catch (err) {
+        setError('Connection to server failed');
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
     const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
     
-    // Prepare body: if student registration, use student_code as username
     let body;
     if (isRegistering) {
       body = { ...formData, role };
-      if (role === 'student') {
-        body.username = formData.student_code; // Use student_code as username
-      }
     } else {
       body = { username: formData.username, password: formData.password, role };
     }
@@ -115,30 +140,37 @@ const Login = () => {
           </Link>
           
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
-            {displayRole} {isRegistering ? 'Registration' : 'Login'}
+            {displayRole} {isForgotPassword ? 'Reset Password' : (isRegistering ? 'Registration' : 'Login')}
           </h2>
           <p className="text-slate-500 mb-8">
-            {isRegistering ? 'Create your account to join the hub.' : 'Please sign in to continue to your dashboard.'}
+            {isForgotPassword 
+              ? 'Enter your official email to receive reset instructions.' 
+              : (isRegistering ? 'Create your account to join the hub.' : 'Please sign in to continue to your dashboard.')}
           </p>
         </div>
 
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           {error && (
-            <div className={`p-4 rounded-md mb-6 ${error.includes('successful') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div className="p-4 rounded-md mb-6 bg-red-50 text-red-700">
               {error}
+            </div>
+          )}
+          {success && (
+            <div className="p-4 rounded-md mb-6 bg-green-50 text-green-700">
+              {success}
             </div>
           )}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {isRegistering && (
+            {!isForgotPassword && isRegistering && (
               <>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
                   <input name="full_name" type="text" required value={formData.full_name} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
-                  <input name="email" type="email" required value={formData.email} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Official Email Address (@pcu.edu.in)</label>
+                  <input name="email" type="email" required value={formData.email} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" placeholder="yourname@pcu.edu.in" />
                 </div>
                 {role === 'student' && (
                   <div className="grid grid-cols-2 gap-4">
@@ -164,43 +196,74 @@ const Login = () => {
               </>
             )}
 
-            {role !== 'student' && (
+            {isForgotPassword ? (
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Username</label>
-                <input name="username" type="text" required={role !== 'student'} value={formData.username} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Official Email ID (@pcu.edu.in)</label>
+                <input name="username" type="email" required value={formData.username} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" placeholder="yourname@pcu.edu.in" />
               </div>
+            ) : (
+              !isRegistering && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    {role === 'student' ? 'Official Email ID (@pcu.edu.in)' : 'Username'}
+                  </label>
+                  <input 
+                    name="username" 
+                    type={role === 'student' ? 'email' : 'text'} 
+                    required 
+                    value={formData.username} 
+                    onChange={handleInputChange} 
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2" 
+                    placeholder={role === 'student' ? 'yourname@pcu.edu.in' : 'Enter username'}
+                  />
+                </div>
+              )
             )}
 
-            {!isRegistering && role === 'student' && (
+            {!isRegistering && !isForgotPassword && (
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Student ERP code</label>
-                <input name="username" type="text" required value={formData.username} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-semibold text-slate-700">Password</label>
+                  <button 
+                    type="button"
+                    onClick={() => setIsForgotPassword(true)}
+                    className="text-xs font-semibold text-sky-600 hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <input name="password" type="password" required minLength="8" value={formData.password} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
               </div>
             )}
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
-              <input name="password" type="password" required minLength="8" value={formData.password} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
-            </div>
 
             <button
               type="submit"
               disabled={isLoading}
               className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {isLoading ? 'Processing...' : (isRegistering ? 'Register' : 'Sign In')}
+              {isLoading ? 'Processing...' : (isForgotPassword ? 'Send Reset Link' : (isRegistering ? 'Register' : 'Sign In'))}
               {!isLoading && <ArrowRight className="h-5 w-5" />}
             </button>
 
             <div className="text-center mt-6">
-              {role !== 'admin' && role !== 'shopkeeper' && (
+              {isForgotPassword ? (
                 <button
                   type="button"
-                  onClick={() => setIsRegistering(!isRegistering)}
+                  onClick={() => setIsForgotPassword(false)}
                   className="text-sky-600 font-semibold hover:underline"
                 >
-                  {isRegistering ? 'Already have an account? Sign In' : "Don't have an account? Register Now"}
+                  Back to Login
                 </button>
+              ) : (
+                role !== 'admin' && role !== 'shopkeeper' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRegistering(!isRegistering)}
+                    className="text-sky-600 font-semibold hover:underline"
+                  >
+                    {isRegistering ? 'Already have an account? Sign In' : "Don't have an account? Register Now"}
+                  </button>
+                )
               )}
             </div>
           </form>

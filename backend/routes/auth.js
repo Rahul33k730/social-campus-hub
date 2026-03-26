@@ -177,10 +177,11 @@ router.post('/login', async (req, res) => {
     // Check user for other roles
     let user;
     if (role === 'student') {
-      const student = await Student.findOne({ where: { student_code: username } });
-      if (student) {
-        user = await User.findOne({ where: { user_id: student.user_id, role: 'student' }, include: [Student] });
+      // For students, login by email (official ID)
+      if (!username.endsWith('@pcu.edu.in')) {
+        return res.status(400).json({ success: false, message: 'Students must login with their @pcu.edu.in email' });
       }
+      user = await User.findOne({ where: { email: username, role: 'student' }, include: [Student] });
     } else {
       user = await User.findOne({ 
         where: { username, role }
@@ -224,6 +225,27 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ success: false, message: 'Server error during login' });
+  }
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Request a password reset link (mock)
+router.post('/forgot-password', async (req, res) => {
+  const { email, role } = req.body;
+
+  try {
+    // Check if user exists
+    const user = await User.findOne({ where: { email, role } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account found with this email' });
+    }
+
+    // In a real application, you would send a reset token to the email
+    // For now, we will return a success message
+    res.json({ success: true, message: 'Password reset instructions have been sent to your email.' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, message: 'Server error during forgot password request' });
   }
 });
 
