@@ -206,13 +206,13 @@ const StudentFun = () => {
   const remainingTime = CALL_DURATION_LIMIT - timer;
 
   return (
-    <div className="max-w-2xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
-      <div className="text-center mb-8">
+    <div className="max-w-5xl mx-auto min-h-[calc(100vh-12rem)] flex flex-col">
+      <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Campus Fun</h1>
-        <p className="text-slate-500">Connect randomly with fellow students on campus!</p>
+        <p className="text-slate-500 text-sm">Connect randomly with fellow students on campus!</p>
       </div>
 
-      <div className="flex-1 bg-slate-900 rounded-3xl shadow-2xl overflow-hidden relative border-4 border-slate-800">
+      <div className="flex-1 bg-slate-900 rounded-3xl shadow-2xl overflow-hidden relative border-4 border-slate-800 min-h-[500px]">
         {status === 'idle' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6">
             <div className="h-24 w-24 bg-sky-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
@@ -350,21 +350,17 @@ const StudentFun = () => {
         )}
       </div>
       
-      <div className="mt-8 bg-sky-50 border border-sky-100 rounded-2xl p-6 shadow-sm">
-        <h3 className="text-sky-900 font-bold text-sm mb-2 flex items-center gap-2">
-          <span className="h-2 w-2 bg-sky-500 rounded-full animate-pulse"></span>
+      <div className="mt-6 bg-sky-50 border border-sky-100 rounded-2xl p-4 shadow-sm">
+        <h3 className="text-sky-900 font-bold text-xs mb-1 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 bg-sky-500 rounded-full animate-pulse"></span>
           Community Guidelines & Purpose
         </h3>
-        <p className="text-sky-800 text-xs leading-relaxed leading-relaxed">
+        <p className="text-sky-800 text-[10px] leading-relaxed">
           Welcome to the Fun Zone! This space is dedicated to <span className="font-bold">learning and practicing your English communication skills</span> in a friendly environment. 
           As members of the PCU family, we treat everyone with utmost respect and kindness.
+          <span className="text-red-500 font-bold uppercase mx-2">Important:</span> 
+          Strict zero-tolerance policy for abusive language or disrespectful behavior. Violations will result in an immediate and permanent account block. Let's grow together politely!
         </p>
-        <div className="mt-3 pt-3 border-t border-sky-200/50">
-          <p className="text-[10px] text-sky-700 font-medium">
-            <span className="text-red-500 font-bold uppercase mr-1">Important:</span> 
-            Strict zero-tolerance policy for abusive language or disrespectful behavior. Violations will result in an immediate and permanent account block. Let's grow together politely!
-          </p>
-        </div>
       </div>
       
       <div className="mt-4 text-center">
