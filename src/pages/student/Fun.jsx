@@ -350,8 +350,25 @@ const StudentFun = () => {
         )}
       </div>
       
-      <div className="mt-6 text-center">
-        <p className="text-xs text-slate-400 font-medium">Calls are private and limited to PCU Campus Hub members only.</p>
+      <div className="mt-8 bg-sky-50 border border-sky-100 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-sky-900 font-bold text-sm mb-2 flex items-center gap-2">
+          <span className="h-2 w-2 bg-sky-500 rounded-full animate-pulse"></span>
+          Community Guidelines & Purpose
+        </h3>
+        <p className="text-sky-800 text-xs leading-relaxed leading-relaxed">
+          Welcome to the Fun Zone! This space is dedicated to <span className="font-bold">learning and practicing your English communication skills</span> in a friendly environment. 
+          As members of the PCU family, we treat everyone with utmost respect and kindness.
+        </p>
+        <div className="mt-3 pt-3 border-t border-sky-200/50">
+          <p className="text-[10px] text-sky-700 font-medium">
+            <span className="text-red-500 font-bold uppercase mr-1">Important:</span> 
+            Strict zero-tolerance policy for abusive language or disrespectful behavior. Violations will result in an immediate and permanent account block. Let's grow together politely!
+          </p>
+        </div>
+      </div>
+      
+      <div className="mt-4 text-center">
+        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Secure • Private • PCU Campus Hub Only</p>
       </div>
       
       <style>{`
