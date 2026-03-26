@@ -87,11 +87,13 @@ const Essentials = () => {
       <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 bg-sky-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6">
-            Campus Essentials
+            Campus Essentials • Coming Soon
           </div>
           <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">Essential Services & Delivery</h1>
           <p className="text-slate-300 text-lg leading-relaxed">
             Quick access to medical shops, local hotels, and transport providing secure delivery directly to your campus location. Dedicated service for all students living in boys and girls hostels.
+            <br />
+            <span className="text-sky-400 font-bold">This services will be available soon.</span>
           </p>
         </div>
         <div className="absolute -right-20 -bottom-20 opacity-10 pointer-events-none">
@@ -204,7 +206,9 @@ const Essentials = () => {
         <div>
           <h4 className="text-xl font-bold text-sky-900 mb-1">Campus Delivery & Transport</h4>
           <p className="text-sky-700/80 leading-relaxed">
-            For girls living in campus hostels, all deliveries are verified at the main gate. Please ensure that you will take your delivery from the Main gate only. Never go outside of the gate.
+            For girls living in campus hostels, all deliveries are verified at the gate. Please ensure you share your block and room number clearly with the delivery partner. Transport services are available at the main gate.
+            <br />
+            <span className="font-bold text-sky-600">This services will be available soon.</span>
           </p>
         </div>
       </div>
