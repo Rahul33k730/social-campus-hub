@@ -14,6 +14,7 @@ const StudentFun = () => {
   const [caller, setCaller] = useState(null);
   const [timer, setTimer] = useState(0);
   const [stream, setStream] = useState(null);
+  const [offerSignal, setOfferSignal] = useState(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   
@@ -44,6 +45,8 @@ const StudentFun = () => {
     socketRef.current.on('signal', ({ from, signal }) => {
       if (peerRef.current) {
         peerRef.current.signal(signal);
+      } else if (signal.type === 'offer') {
+        setOfferSignal(signal);
       }
     });
 
@@ -58,6 +61,12 @@ const StudentFun = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (stream && userVideo.current) {
+      userVideo.current.srcObject = stream;
+    }
+  }, [stream]);
 
   useEffect(() => {
     let interval;
@@ -81,9 +90,6 @@ const StudentFun = () => {
     try {
       const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setStream(currentStream);
-      if (userVideo.current) {
-        userVideo.current.srcObject = currentStream;
-      }
       
       setStatus('searching');
       socketRef.current.emit('find_match', {
@@ -100,7 +106,6 @@ const StudentFun = () => {
   const initiateCall = (partnerId) => {
     const peer = new Peer({
       initiator: true,
-      trickle: false,
       stream: stream,
     });
 
@@ -122,7 +127,6 @@ const StudentFun = () => {
     
     const peer = new Peer({
       initiator: false,
-      trickle: false,
       stream: stream,
     });
 
@@ -136,12 +140,18 @@ const StudentFun = () => {
       }
     });
 
+    if (offerSignal) {
+      peer.signal(offerSignal);
+      setOfferSignal(null);
+    }
+
     peerRef.current = peer;
   };
 
   const skipCall = () => {
     setStatus('idle');
     setCaller(null);
+    setOfferSignal(null);
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
@@ -164,6 +174,7 @@ const StudentFun = () => {
 
     setStatus('idle');
     setCaller(null);
+    setOfferSignal(null);
     partnerIdRef.current = null;
     peerRef.current = null;
   };

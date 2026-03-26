@@ -120,7 +120,7 @@ const StudentDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Student Dashboard</h1>
-           <p className="text-slate-500 mt-1">Welcome back, {user?.name || 'Rahul'} • Semester 5</p>
+           <p className="text-slate-500 mt-1">Welcome back, {user?.name || 'Rahul'}</p>
         </div>
       </div>
 
