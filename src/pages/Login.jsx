@@ -35,6 +35,12 @@ const Login = () => {
     setError('');
     setIsLoading(true);
 
+    if (isRegistering && role === 'student' && !formData.email.endsWith('@pcu.edu.in')) {
+      setError('Invalid email. Please use your official college email ending with @pcu.edu.in');
+      setIsLoading(false);
+      return;
+    }
+
     const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
     
     // Prepare body: if student registration, use student_code as username

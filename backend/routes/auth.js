@@ -18,6 +18,11 @@ router.post('/register', async (req, res) => {
       return res.status(403).json({ success: false, message: `${role} registration is disabled` });
     }
 
+    // Validate student email
+    if (role === 'student' && !email.endsWith('@pcu.edu.in')) {
+      return res.status(400).json({ success: false, message: 'Invalid email. Please use your official college email ending with @pcu.edu.in' });
+    }
+
     // Validate password length
     if (password.length < 8) {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
