@@ -12,6 +12,12 @@ const AdminDashboard = () => {
   const [visitorCount, setVisitorCount] = useState(0);
   const [pendingEvents, setPendingEvents] = useState([]);
   const [printOrders, setPrintOrders] = useState([]);
+  const [essentialServices, setEssentialServices] = useState([]);
+  const [serviceFeedbacks, setServiceFeedbacks] = useState([]);
+  const [isAddingService, setIsAddingService] = useState(false);
+  const [serviceFormData, setServiceFormData] = useState({
+    name: '', category: 'medical', description: '', phone: '', location: '', timing: '', deliveryTime: ''
+  });
   const [ads, setAds] = useState([]);
   const [adFormData, setAdFormData] = useState({
     title: '',
@@ -34,7 +40,60 @@ const AdminDashboard = () => {
     fetchPendingEvents();
     fetchAds();
     fetchPrintOrders();
+    fetchEssentialServices();
+    fetchServiceFeedbacks();
   }, []);
+
+  const fetchEssentialServices = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/essentials`);
+      const data = await response.json();
+      setEssentialServices(data);
+    } catch (err) {
+      console.error('Failed to fetch essential services');
+    }
+  };
+
+  const fetchServiceFeedbacks = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/essentials/feedback`);
+      const data = await response.json();
+      setServiceFeedbacks(data);
+    } catch (err) {
+      console.error('Failed to fetch service feedbacks');
+    }
+  };
+
+  const handleAddService = async (e) => {
+    e.preventDefault();
+    setIsAddingService(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/essentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serviceFormData)
+      });
+      if (response.ok) {
+        alert('Service added successfully!');
+        setServiceFormData({ name: '', category: 'medical', description: '', phone: '', location: '', timing: '', deliveryTime: '' });
+        fetchEssentialServices();
+      }
+    } catch (err) {
+      console.error('Failed to add service');
+    } finally {
+      setIsAddingService(false);
+    }
+  };
+
+  const handleDeleteService = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this service?')) return;
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/essentials/${id}`, { method: 'DELETE' });
+      fetchEssentialServices();
+    } catch (err) {
+      console.error('Failed to delete service');
+    }
+  };
 
   const fetchPrintOrders = async () => {
     try {
@@ -309,6 +368,12 @@ const AdminDashboard = () => {
           className={`pb-4 px-2 text-sm font-bold transition-all ${activeAdminTab === 'printing' ? 'text-sky-600 border-b-2 border-sky-600' : 'text-slate-400 hover:text-slate-600'}`}
         >
           Printing Orders
+        </button>
+        <button 
+          onClick={() => setActiveAdminTab('essentials')}
+          className={`pb-4 px-2 text-sm font-bold transition-all ${activeAdminTab === 'essentials' ? 'text-sky-600 border-b-2 border-sky-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          Essential Services
         </button>
       </div>
 
@@ -740,6 +805,141 @@ const AdminDashboard = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {activeAdminTab === 'essentials' && (
+        <div className="space-y-8 pb-20">
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Add Service Form */}
+            <div className="md:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <h2 className="font-bold text-slate-900 flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-sky-600" /> Add New Service
+                </h2>
+              </div>
+              <form onSubmit={handleAddService} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Service Name</label>
+                  <input required type="text" value={serviceFormData.name} onChange={(e) => setServiceFormData({...serviceFormData, name: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Campus Pharma" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                  <select value={serviceFormData.category} onChange={(e) => setServiceFormData({...serviceFormData, category: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="medical">Medical</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="transport">Transport</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
+                  <textarea required value={serviceFormData.description} onChange={(e) => setServiceFormData({...serviceFormData, description: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm h-20" placeholder="Describe the service..."></textarea>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Phone</label>
+                    <input type="text" value={serviceFormData.phone} onChange={(e) => setServiceFormData({...serviceFormData, phone: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="+91..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label>
+                    <input required type="text" value={serviceFormData.location} onChange={(e) => setServiceFormData({...serviceFormData, location: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Main Gate" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Timing</label>
+                    <input type="text" value={serviceFormData.timing} onChange={(e) => setServiceFormData({...serviceFormData, timing: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="e.g. 24/7" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Delivery Time</label>
+                    <input type="text" value={serviceFormData.deliveryTime} onChange={(e) => setServiceFormData({...serviceFormData, deliveryTime: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="e.g. 20 mins" />
+                  </div>
+                </div>
+                <button type="submit" disabled={isAddingService} className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg text-sm">
+                  {isAddingService ? 'Adding...' : 'Save Service Contract'}
+                </button>
+              </form>
+            </div>
+
+            {/* Service List & Feedbacks */}
+            <div className="md:col-span-2 space-y-8">
+              {/* Existing Services */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                  <h2 className="font-bold text-slate-900">Active Service Contracts</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                        <th className="px-6 py-3 border-b border-slate-200">Service</th>
+                        <th className="px-6 py-3 border-b border-slate-200">Category</th>
+                        <th className="px-6 py-3 border-b border-slate-200">Location</th>
+                        <th className="px-6 py-3 border-b border-slate-200 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {essentialServices.map(service => (
+                        <tr key={service.id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-slate-900">{service.name}</div>
+                            <div className="text-xs text-slate-500">{service.phone}</div>
+                          </td>
+                          <td className="px-6 py-4 uppercase text-[10px] font-bold">
+                            <span className={`px-2 py-1 rounded-full ${
+                              service.category === 'medical' ? 'bg-sky-100 text-sky-700' : 
+                              service.category === 'hotel' ? 'bg-emerald-100 text-emerald-700' : 
+                              'bg-amber-100 text-amber-700'
+                            }`}>{service.category}</span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600">{service.location}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => handleDeleteService(service.id)} className="text-rose-600 hover:text-rose-700 p-2 rounded-lg bg-rose-50">
+                              <XCircle size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {essentialServices.length === 0 && (
+                        <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-400">No services configured.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Service Feedback Feed */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                  <h2 className="font-bold text-slate-900 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-amber-500 fill-amber-500" /> Student Feedbacks
+                  </h2>
+                </div>
+                <div className="p-6 space-y-4">
+                  {serviceFeedbacks.map(feedback => (
+                    <div key={feedback.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="font-bold text-slate-900 text-sm">{feedback.user_name}</span>
+                          <span className="mx-2 text-slate-300">•</span>
+                          <span className="text-xs text-sky-600 font-bold uppercase">{feedback.service_name}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          {[...Array(feedback.rating)].map((_, i) => (
+                            <Star key={i} size={12} className="text-amber-500 fill-amber-500" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600 italic">"{feedback.comment}"</p>
+                      <div className="text-[10px] text-slate-400 mt-2 font-bold">{new Date(feedback.createdAt).toLocaleString()}</div>
+                    </div>
+                  ))}
+                  {serviceFeedbacks.length === 0 && (
+                    <p className="text-center py-10 text-slate-400 text-sm">No feedbacks received yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -17,6 +17,7 @@ import adRoutes from './routes/ads.js';
 import printingRoutes from './routes/printing.js';
 import helpdeskRoutes from './routes/helpdesk.js';
 import feedbackRoutes from './routes/feedback.js';
+import essentialsRoutes from './routes/essentials.js';
 import sequelize from './config/database.js';
 import Visitor from './models/Visitor.js';
 import Admin from './models/Admin.js';
@@ -132,6 +133,7 @@ app.use('/api/ads', adRoutes);
 app.use('/api/printing', printingRoutes);
 app.use('/api/helpdesk', helpdeskRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/essentials', essentialsRoutes);
 
 // Visitor Tracking Route
 app.get('/api/visitor/increment', async (req, res) => {

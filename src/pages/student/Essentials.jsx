@@ -1,78 +1,69 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Phone, MapPin, Clock, Search, ExternalLink, HeartPulse, Utensils, Truck, Car } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Phone, MapPin, Clock, Search, ExternalLink, HeartPulse, Utensils, Truck, Car, Star, Send, XCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Essentials = () => {
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Feedback Form State
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [feedbackData, setFeedbackData] = useState({
+    rating: 5,
+    comment: ''
+  });
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
-  const services = [
-    {
-      id: 1,
-      name: "PCU Campus Medics",
-      category: "medical",
-      description: "Emergency medicines and basic healthcare supplies. Specialized delivery for all campus hostels.",
-      phone: "+91 98765 43210",
-      location: "Main Gate, Sector 1",
-      timing: "24/7",
-      deliveryTime: "15-20 mins",
-      isOpen: true
-    },
-    {
-      id: 2,
-      name: "City Pharma",
-      category: "medical",
-      description: "Wide range of prescription medicines and personal care products.",
-      phone: "+91 87654 32109",
-      location: "2km from Campus",
-      timing: "9:00 AM - 11:00 PM",
-      deliveryTime: "30-40 mins",
-      isOpen: true
-    },
-    {
-      id: 3,
-      name: "Campus Delight Hotel",
-      category: "hotel",
-      description: "Healthy home-style meals, snacks, and dinner. Secure delivery to campus blocks.",
-      phone: "+91 76543 21098",
-      location: "Opposite West Gate",
-      timing: "10:00 AM - 10:30 PM",
-      deliveryTime: "25-30 mins",
-      isOpen: true
-    },
-    {
-      id: 4,
-      name: "Green Valley Resto",
-      category: "hotel",
-      description: "Multi-cuisine restaurant with special student meal combos.",
-      phone: "+91 65432 10987",
-      location: "Main Road Market",
-      timing: "11:00 AM - 11:00 PM",
-      deliveryTime: "40-50 mins",
-      isOpen: true
-    },
-    {
-      id: 5,
-      name: "Campus Auto Stand",
-      category: "transport",
-      description: "24/7 auto-rickshaw service available right outside the main gate.",
-      phone: "N/A",
-      location: "Main Gate",
-      timing: "24/7",
-      deliveryTime: "Immediate",
-      isOpen: true
-    },
-    {
-      id: 6,
-      name: "City Cab Service",
-      category: "transport",
-      description: "Book cabs for city travel, airport drops, and station pickups.",
-      phone: "+91 99887 76655",
-      location: "Service across city",
-      timing: "24/7",
-      deliveryTime: "10-15 mins wait",
-      isOpen: true
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/essentials`);
+      const data = await response.json();
+      setServices(data);
+    } catch (err) {
+      console.error('Failed to fetch services');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      alert('Please login to submit feedback');
+      return;
+    }
+    setIsSubmittingFeedback(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/essentials/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id || 1,
+          user_name: user.name || 'Student',
+          service_name: selectedService.name,
+          rating: feedbackData.rating,
+          comment: feedbackData.comment
+        })
+      });
+      if (response.ok) {
+        alert('Feedback submitted successfully! Thank you.');
+        setShowFeedbackModal(false);
+        setFeedbackData({ rating: 5, comment: '' });
+      }
+    } catch (err) {
+      console.error('Failed to submit feedback');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   const filteredServices = services.filter(service => {
     const matchesCategory = activeCategory === 'all' || service.category === activeCategory;
@@ -185,18 +176,79 @@ const Essentials = () => {
                 >
                   <Phone size={18} /> Call Now
                 </a>
-                <button className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all">
-                  <ExternalLink size={18} />
+                <button 
+                  onClick={() => {
+                    setSelectedService(service);
+                    setShowFeedbackModal(true);
+                  }}
+                  className="px-4 py-3.5 bg-sky-50 hover:bg-sky-100 text-sky-600 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
+                >
+                  <Star size={18} /> Feedback
                 </button>
               </div>
             </div>
           </div>
         )) : (
           <div className="col-span-2 text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-            <p className="text-slate-400 font-medium">No services found matching your search.</p>
+            <p className="text-slate-400 font-medium">{isLoading ? 'Loading services...' : 'No services found matching your search.'}</p>
           </div>
         )}
       </div>
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Service Feedback</h3>
+                <p className="text-xs text-slate-500 font-medium mt-1">Rate your experience with {selectedService?.name}</p>
+              </div>
+              <button onClick={() => setShowFeedbackModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleFeedbackSubmit} className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackData({ ...feedbackData, rating: star })}
+                      className={`p-2 rounded-lg transition-all ${feedbackData.rating >= star ? 'text-amber-400 bg-amber-50' : 'text-slate-300 bg-slate-50'}`}
+                    >
+                      <Star size={24} fill={feedbackData.rating >= star ? "currentColor" : "none"} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Your Comments</label>
+                <textarea 
+                  required
+                  value={feedbackData.comment}
+                  onChange={(e) => setFeedbackData({ ...feedbackData, comment: e.target.value })}
+                  placeholder="How was the service? Any issues with delivery?"
+                  className="w-full border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all h-32 resize-none"
+                ></textarea>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isSubmittingFeedback}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                {isSubmittingFeedback ? 'Submitting...' : 'Submit Feedback'}
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Info Banner */}
       <div className="bg-sky-50 border border-sky-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-center gap-6">
