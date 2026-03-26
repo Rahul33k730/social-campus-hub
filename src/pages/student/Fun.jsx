@@ -1,18 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Video, VideoOff, Phone, PhoneOff, User, RefreshCw, X, Mic, MicOff, Camera, CameraOff } from 'lucide-react';
+import io from 'socket.io-client';
+import Peer from 'simple-peer';
+import { useAuth } from '../../context/AuthContext';
+
+const SOCKET_SERVER = import.meta.env.DEV 
+  ? 'http://localhost:5000' 
+  : window.location.origin;
 
 const StudentFun = () => {
+  const { user } = useAuth();
   const [status, setStatus] = useState('idle'); // idle, searching, incoming, in_call
   const [caller, setCaller] = useState(null);
   const [timer, setTimer] = useState(0);
+  const [stream, setStream] = useState(null);
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
+  
+  const socketRef = useRef();
+  const userVideo = useRef();
+  const partnerVideo = useRef();
+  const peerRef = useRef();
+  const partnerIdRef = useRef();
+  
   const CALL_DURATION_LIMIT = 180; // 3 minutes limit (180 seconds)
 
-  const potentialCallers = [
-    { name: "Siddharth M.", dept: "Computer Science", year: "3rd Year" },
-    { name: "Ananya R.", dept: "Design", year: "2nd Year" },
-    { name: "Prateek S.", dept: "Engineering", year: "4th Year" },
-    { name: "Isha G.", dept: "Management", year: "1st Year" }
-  ];
+  useEffect(() => {
+    socketRef.current = io(SOCKET_SERVER);
+
+    socketRef.current.on('match_found', ({ partnerId, partnerData, initiator }) => {
+      console.log('Match found:', partnerId, partnerData, initiator);
+      setCaller(partnerData);
+      partnerIdRef.current = partnerId;
+      
+      if (initiator) {
+        setStatus('in_call');
+        initiateCall(partnerId);
+      } else {
+        setStatus('incoming');
+      }
+    });
+
+    socketRef.current.on('signal', ({ from, signal }) => {
+      if (peerRef.current) {
+        peerRef.current.signal(signal);
+      }
+    });
+
+    socketRef.current.on('call_ended', () => {
+      endCall();
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -32,30 +77,111 @@ const StudentFun = () => {
     return () => clearInterval(interval);
   }, [status]);
 
-  const startSearching = () => {
-    console.log("Starting random call search...");
-    setStatus('searching');
-    setTimeout(() => {
-      const randomCaller = potentialCallers[Math.floor(Math.random() * potentialCallers.length)];
-      console.log("Matched with caller:", randomCaller);
-      setCaller(randomCaller);
-      setStatus('incoming');
-    }, 2000);
+  const startSearching = async () => {
+    try {
+      const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setStream(currentStream);
+      if (userVideo.current) {
+        userVideo.current.srcObject = currentStream;
+      }
+      
+      setStatus('searching');
+      socketRef.current.emit('find_match', {
+        name: user?.name || 'Anonymous Student',
+        dept: 'PCU Student',
+        year: 'Any Year'
+      });
+    } catch (err) {
+      console.error('Failed to get user media:', err);
+      alert('Could not access camera/microphone. Please check permissions.');
+    }
+  };
+
+  const initiateCall = (partnerId) => {
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream: stream,
+    });
+
+    peer.on('signal', (data) => {
+      socketRef.current.emit('signal', { to: partnerId, signal: data });
+    });
+
+    peer.on('stream', (partnerStream) => {
+      if (partnerVideo.current) {
+        partnerVideo.current.srcObject = partnerStream;
+      }
+    });
+
+    peerRef.current = peer;
   };
 
   const acceptCall = () => {
-    console.log("Call accepted.");
     setStatus('in_call');
+    
+    const peer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream: stream,
+    });
+
+    peer.on('signal', (data) => {
+      socketRef.current.emit('signal', { to: partnerIdRef.current, signal: data });
+    });
+
+    peer.on('stream', (partnerStream) => {
+      if (partnerVideo.current) {
+        partnerVideo.current.srcObject = partnerStream;
+      }
+    });
+
+    peerRef.current = peer;
   };
+
   const skipCall = () => {
-    console.log("Call skipped.");
     setStatus('idle');
     setCaller(null);
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
   };
+
   const endCall = () => {
-    console.log("Call ended.");
+    if (partnerIdRef.current) {
+      socketRef.current.emit('end_call', { to: partnerIdRef.current });
+    }
+    
+    if (peerRef.current) {
+      peerRef.current.destroy();
+    }
+    
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+
     setStatus('idle');
     setCaller(null);
+    partnerIdRef.current = null;
+    peerRef.current = null;
+  };
+
+  const toggleMic = () => {
+    if (stream) {
+      const audioTrack = stream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
+      setIsMicMuted(!audioTrack.enabled);
+    }
+  };
+
+  const toggleCamera = () => {
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled;
+      setIsCameraOff(!videoTrack.enabled);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -91,8 +217,26 @@ const StudentFun = () => {
 
         {status === 'searching' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+            <div className="relative mb-8 h-48 w-64 rounded-2xl overflow-hidden bg-slate-800 border-2 border-slate-700">
+              <video 
+                ref={userVideo} 
+                autoPlay 
+                muted 
+                playsInline 
+                className="h-full w-full object-cover mirror"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                <span className="text-xs font-bold text-white/80">Connecting camera...</span>
+              </div>
+            </div>
             <RefreshCw className="h-12 w-12 text-sky-400 animate-spin mb-4" />
             <p className="text-lg font-medium animate-pulse">Finding someone on campus...</p>
+            <button 
+              onClick={skipCall}
+              className="mt-8 text-slate-400 hover:text-white transition-colors underline underline-offset-4"
+            >
+              Cancel Search
+            </button>
           </div>
         )}
 
@@ -125,12 +269,21 @@ const StudentFun = () => {
 
         {status === 'in_call' && (
           <div className="absolute inset-0 flex flex-col">
-            {/* Remote Video (Simulated) */}
-            <div className="flex-1 bg-slate-800 relative">
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
-                <User size={120} />
-                <p className="mt-4 font-bold text-slate-500">Simulating Video Stream...</p>
-              </div>
+            {/* Remote Video */}
+            <div className="flex-1 bg-slate-800 relative overflow-hidden">
+              <video 
+                ref={partnerVideo} 
+                autoPlay 
+                playsInline 
+                className="h-full w-full object-cover"
+              />
+              
+              {!partnerVideo.current?.srcObject && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                  <User size={120} />
+                  <p className="mt-4 font-bold text-slate-500">Connecting to Partner...</p>
+                </div>
+              )}
               
               <div className="absolute top-6 left-6 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
                 <div className={`h-2 w-2 rounded-full animate-pulse ${remainingTime <= 10 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
@@ -140,22 +293,38 @@ const StudentFun = () => {
                 </span>
               </div>
 
-              {/* Local Video (Simulated) */}
-              <div className="absolute bottom-6 right-6 h-40 w-28 bg-slate-700 rounded-xl border-2 border-white/20 overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-                  <User size={30} />
-                </div>
+              {/* Local Video Overlay */}
+              <div className="absolute bottom-6 right-6 h-40 w-28 bg-slate-700 rounded-xl border-2 border-white/20 overflow-hidden shadow-2xl z-10">
+                {isCameraOff ? (
+                  <div className="h-full w-full flex items-center justify-center text-slate-500">
+                    <CameraOff size={24} />
+                  </div>
+                ) : (
+                  <video 
+                    ref={userVideo} 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    className="h-full w-full object-cover mirror"
+                  />
+                )}
                 <div className="absolute bottom-2 left-2 text-[10px] text-white font-bold bg-black/40 px-1.5 py-0.5 rounded">You</div>
               </div>
             </div>
 
             {/* Controls */}
             <div className="h-24 bg-slate-900 flex items-center justify-center gap-6 border-t border-slate-800">
-              <button className="h-12 w-12 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-white transition-colors">
-                <Mic className="h-5 w-5" />
+              <button 
+                onClick={toggleMic}
+                className={`h-12 w-12 rounded-full flex items-center justify-center text-white transition-colors ${isMicMuted ? 'bg-red-500' : 'bg-slate-800 hover:bg-slate-700'}`}
+              >
+                {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </button>
-              <button className="h-12 w-12 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-white transition-colors">
-                <Camera className="h-5 w-5" />
+              <button 
+                onClick={toggleCamera}
+                className={`h-12 w-12 rounded-full flex items-center justify-center text-white transition-colors ${isCameraOff ? 'bg-red-500' : 'bg-slate-800 hover:bg-slate-700'}`}
+              >
+                {isCameraOff ? <CameraOff className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
               </button>
               <button 
                 onClick={endCall}
@@ -171,6 +340,12 @@ const StudentFun = () => {
       <div className="mt-6 text-center">
         <p className="text-xs text-slate-400 font-medium">Calls are private and limited to PCU Campus Hub members only.</p>
       </div>
+      
+      <style>{`
+        .mirror {
+          transform: scaleX(-1);
+        }
+      `}</style>
     </div>
   );
 };
