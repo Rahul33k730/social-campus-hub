@@ -125,9 +125,9 @@ const Login = () => {
           <div className="h-16 w-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-2xl overflow-hidden border border-slate-200">
             <img src="/images/pcu-logo.jpg" alt="PCU" className="w-full h-full object-contain p-2" />
           </div>
-          <h1 className="text-5xl font-bold mb-6 leading-tight">Welcome to <br/> <span className="text-sky-400">PCU Campus Hub</span></h1>
+          <h1 className="text-5xl font-bold mb-6 leading-tight">The Heart of <br/> <span className="text-sky-400">Your Campus Life</span></h1>
           <p className="text-lg text-slate-300 mb-8 leading-relaxed">
-            The official smart digital campus platform for PCU. Access your academic records, attendance, and campus updates in one secure place.
+            Access academic records, track attendance, and stay updated with campus events—all in one secure, unified hub.
           </p>
         </div>
       </div>
@@ -192,6 +192,10 @@ const Login = () => {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Branch</label>
                   <input name="branch" type="text" required value={formData.branch} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                  <input name="password" type="password" required minLength="8" value={formData.password} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-4 py-2" />
                 </div>
               </>
             )}
