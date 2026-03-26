@@ -10,7 +10,7 @@ const Essentials = () => {
       id: 1,
       name: "PCU Campus Medics",
       category: "medical",
-      description: "Emergency medicines and basic healthcare supplies. Specialized delivery for girls' hostel.",
+      description: "Emergency medicines and basic healthcare supplies. Specialized delivery for all campus hostels.",
       phone: "+91 98765 43210",
       location: "Main Gate, Sector 1",
       timing: "24/7",
@@ -91,7 +91,7 @@ const Essentials = () => {
           </div>
           <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">Essential Services & Delivery</h1>
           <p className="text-slate-300 text-lg leading-relaxed">
-            Quick access to medical shops, local hotels, and transport providing secure delivery directly to your campus location. Special care for girls living inside the campus.
+            Quick access to medical shops, local hotels, and transport providing secure delivery directly to your campus location. Dedicated service for all students living in boys and girls hostels.
           </p>
         </div>
         <div className="absolute -right-20 -bottom-20 opacity-10 pointer-events-none">
@@ -204,7 +204,7 @@ const Essentials = () => {
         <div>
           <h4 className="text-xl font-bold text-sky-900 mb-1">Campus Delivery & Transport</h4>
           <p className="text-sky-700/80 leading-relaxed">
-            For girls living in campus hostels, all deliveries are verified at the gate. Please ensure you share your block and room number clearly with the delivery partner. Transport services are available at the main gate.
+            For students living in campus hostels (both boys and girls), all deliveries are verified at the gate. Please ensure you share your block and room number clearly with the delivery partner. Transport services are available at the main gate.
           </p>
         </div>
       </div>
