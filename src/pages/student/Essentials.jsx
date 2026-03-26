@@ -204,7 +204,7 @@ const Essentials = () => {
         <div>
           <h4 className="text-xl font-bold text-sky-900 mb-1">Campus Delivery & Transport</h4>
           <p className="text-sky-700/80 leading-relaxed">
-            For students living in campus hostels (both boys and girls), all deliveries are verified at the gate. Please ensure you share your block and room number clearly with the delivery partner. Transport services are available at the main gate.
+            For girls living in campus hostels, all deliveries are verified at the main gate. Please ensure that you will take your delivery from the Main gate only. Never go outside of the gate.
           </p>
         </div>
       </div>
