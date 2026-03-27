@@ -23,6 +23,7 @@ const StudentFun = () => {
   const partnerVideo = useRef();
   const peerRef = useRef();
   const partnerIdRef = useRef();
+  const streamRef = useRef();
   
   const CALL_DURATION_LIMIT = 180; // 3 minutes limit (180 seconds)
 
@@ -90,6 +91,7 @@ const StudentFun = () => {
     try {
       const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setStream(currentStream);
+      streamRef.current = currentStream;
       
       setStatus('searching');
       socketRef.current.emit('find_match', {
@@ -104,16 +106,29 @@ const StudentFun = () => {
   };
 
   const createPeer = (partnerId, initiator) => {
+    console.log('Creating peer for:', partnerId, 'Initiator:', initiator);
+    
+    // Explicit STUN servers for more reliable connections
     const peer = new Peer({
       initiator,
-      stream: stream,
+      trickle: true,
+      stream: streamRef.current, // Use ref to ensure the stream is available
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+        ]
+      }
     });
 
     peer.on('signal', (data) => {
+      console.log('Emitting signal to:', partnerId);
       socketRef.current.emit('signal', { to: partnerId, signal: data });
     });
 
     peer.on('stream', (partnerStream) => {
+      console.log('Received partner stream');
       if (partnerVideo.current) {
         partnerVideo.current.srcObject = partnerStream;
       }
@@ -125,7 +140,7 @@ const StudentFun = () => {
 
     peer.on('error', (err) => {
       console.error('Peer connection error:', err);
-      endCall();
+      // Don't end call immediately, let's see what the error is
     });
 
     peer.on('close', () => {
@@ -153,10 +168,11 @@ const StudentFun = () => {
     setStatus('idle');
     setCaller(null);
     setOfferSignal(null);
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
+    setStream(null);
   };
 
   const endCall = () => {
@@ -169,10 +185,11 @@ const StudentFun = () => {
       peerRef.current.destroy();
     }
     
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
+    setStream(null);
 
     setStatus('idle');
     setCaller(null);
@@ -182,16 +199,16 @@ const StudentFun = () => {
   };
 
   const toggleMic = () => {
-    if (stream) {
-      const audioTrack = stream.getAudioTracks()[0];
+    if (streamRef.current) {
+      const audioTrack = streamRef.current.getAudioTracks()[0];
       audioTrack.enabled = !audioTrack.enabled;
       setIsMicMuted(!audioTrack.enabled);
     }
   };
 
   const toggleCamera = () => {
-    if (stream) {
-      const videoTrack = stream.getVideoTracks()[0];
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
       videoTrack.enabled = !videoTrack.enabled;
       setIsCameraOff(!videoTrack.enabled);
     }
