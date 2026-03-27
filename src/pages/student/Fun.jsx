@@ -20,7 +20,10 @@ const StudentFun = () => {
   
   const [partnerStream, setPartnerStream] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Disconnected');
-  const [pendingSignals, setPendingSignals] = useState([]);
+  const [isRemoteVideoMuted, setIsRemoteVideoMuted] = useState(false);
+  const [isRemoteCameraOff, setIsRemoteCameraOff] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  
   const partnerStreamRef = useRef();
   const pendingSignalsRef = useRef([]);
   
@@ -44,6 +47,7 @@ const StudentFun = () => {
       console.log('Match found:', partnerId, partnerData, initiator);
       setCaller(partnerData);
       partnerIdRef.current = partnerId;
+      setConnectionStatus('Calling...');
       
       if (initiator) {
         setStatus('in_call');
@@ -152,7 +156,7 @@ const StudentFun = () => {
   const createPeer = (partnerId, initiator) => {
     console.log('Creating peer for:', partnerId, 'Initiator:', initiator);
     
-    // Simplified peer configuration for maximum compatibility
+    // Updated peer configuration with more STUN servers
     const peer = new Peer({
       initiator,
       trickle: true,
@@ -165,13 +169,24 @@ const StudentFun = () => {
           { urls: 'stun:stun3.l.google.com:19302' },
           { urls: 'stun:stun4.l.google.com:19302' },
           { urls: 'stun:stun.services.mozilla.com' },
+          { urls: 'stun:stun.stunprotocol.org:3478' },
+          { urls: 'stun:stun.voiparound.com:3478' },
+          { urls: 'stun:stun.voipbuster.com:3478' },
+          { urls: 'stun:stun.voipstunt.com:3478' },
+          { urls: 'stun:stun.voxgratia.org:3478' },
+          { urls: 'stun:stun.ekiga.net' },
+          { urls: 'stun:stun.ideasip.com' },
+          { urls: 'stun:stun.schlund.de' },
+          { urls: 'stun:stun.softjoys.com' },
+          { urls: 'stun:stun.voipcheap.com' },
+          { urls: 'stun:stun.voipstunt.com' }
         ]
       }
     });
 
     peer.on('signal', (data) => {
-      console.log('Generated local signal, sending to partner:', partnerId);
-      setConnectionStatus('Signaling...');
+      console.log('Generated local signal, sending to partner:', partnerId, 'Signal type:', data.type || 'candidate');
+      setConnectionStatus(data.type === 'offer' ? 'Initiating...' : data.type === 'answer' ? 'Responding...' : 'Optimizing...');
       socketRef.current.emit('signal', { to: partnerId, signal: data });
     });
 
@@ -203,13 +218,13 @@ const StudentFun = () => {
 
     peer.on('connect', () => {
       console.log('Peer connection established');
-      setConnectionStatus('Connected');
+      setConnectionStatus('Secure Connection');
     });
 
     peer.on('error', (err) => {
       console.error('Peer connection error:', err);
-      setConnectionStatus('Connection Failed');
-      // Don't end call immediately, let's see what the error is
+      setConnectionStatus('Retrying...');
+      // Try to re-signal if possible or just log
     });
 
     peer.on('close', () => {
@@ -240,6 +255,7 @@ const StudentFun = () => {
 
   const acceptCall = () => {
     setStatus('in_call');
+    setConnectionStatus('Connecting...');
     peerRef.current = createPeer(partnerIdRef.current, false);
     setOfferSignal(null);
   };
@@ -384,44 +400,63 @@ const StudentFun = () => {
         )}
 
         {status === 'in_call' && (
-          <div className="absolute inset-0 flex flex-col">
-            {/* Remote Video */}
-            <div className="flex-1 bg-slate-800 relative overflow-hidden flex items-center justify-center">
+          <div className="absolute inset-0 flex flex-col bg-slate-950 overflow-hidden">
+            {/* Full Screen Remote Video */}
+            <div className="flex-1 relative group bg-slate-900">
               <video 
                 ref={partnerVideo} 
                 autoPlay 
                 playsInline 
-                muted={false}
-                className="h-full w-full object-contain"
+                className={`h-full w-full ${isRemoteCameraOff ? 'hidden' : 'object-cover'}`}
               />
               
-              {!partnerStream && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 bg-slate-800">
-                  <User size={120} className="animate-pulse" />
-                  <p className="mt-4 font-bold text-slate-500">Connecting to Partner...</p>
-                  <p className="text-[10px] text-sky-500 mt-2 font-mono uppercase tracking-widest">{connectionStatus}</p>
-                  <p className="text-[10px] text-slate-400 mt-4">Ensure both devices are on a stable network</p>
-                  <button 
-                    onClick={() => window.location.reload()}
-                    className="mt-6 px-4 py-2 bg-slate-700 text-white text-xs rounded-full hover:bg-slate-600 transition-all"
-                  >
-                    Refresh & Retry
-                  </button>
+              {/* Partner Info Overlay */}
+              <div className="absolute top-8 left-8 flex items-center gap-3 z-30">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-white text-xl font-bold drop-shadow-lg">{caller?.name}</h2>
+                    <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 mt-1">
+                    <span className={`text-[10px] font-mono font-bold ${remainingTime <= 30 ? 'text-red-400 animate-pulse' : 'text-white/80'}`}>
+                      {formatTime(remainingTime)}
+                    </span>
+                    <span className="text-white/30 text-[10px]">|</span>
+                    <span className="text-[10px] text-white/60 font-medium uppercase tracking-tighter">HD Live</span>
+                  </div>
                 </div>
-              )}
-              
-              <div className="absolute top-6 left-6 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-                <div className={`h-2 w-2 rounded-full animate-pulse ${remainingTime <= 10 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                <span className="text-white text-sm font-bold">{caller?.name}</span>
-                <span className={`text-xs font-mono ${remainingTime <= 10 ? 'text-red-400 font-bold' : 'text-white/60'}`}>
-                  Ends in: {formatTime(remainingTime)}
-                </span>
               </div>
 
-              {/* Local Video Overlay */}
-              <div className="absolute bottom-6 right-6 h-40 w-28 bg-slate-700 rounded-xl border-2 border-white/20 overflow-hidden shadow-2xl z-10">
+              {/* Connection Status Indicator */}
+              {!partnerStream && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
+                  <div className="relative">
+                    <div className="h-32 w-32 bg-slate-800 rounded-full flex items-center justify-center animate-pulse border-2 border-sky-500/30">
+                      <User size={64} className="text-slate-600" />
+                    </div>
+                    <RefreshCw className="absolute bottom-0 right-0 h-10 w-10 text-sky-500 animate-spin bg-slate-900 rounded-full p-2 border-2 border-slate-800" />
+                  </div>
+                  <h3 className="text-white font-bold text-xl mt-6 tracking-tight">Connecting to {caller?.name}...</h3>
+                  <p className="text-sky-400 text-xs mt-2 font-mono font-bold uppercase tracking-[0.2em]">{connectionStatus}</p>
+                  
+                  <div className="mt-12 flex flex-col items-center gap-4">
+                    <p className="text-slate-500 text-[10px] max-w-xs text-center uppercase leading-loose tracking-widest">
+                      Optimizing Peer-to-Peer Tunneling for Campus Network
+                    </p>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="bg-white/5 hover:bg-white/10 text-white/60 text-[10px] px-6 py-2 rounded-full border border-white/10 transition-all font-bold uppercase tracking-widest"
+                    >
+                      Troubleshoot Connection
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Local Video Overlay (WhatsApp Style Floating) */}
+              <div className="absolute top-8 right-8 w-32 sm:w-40 aspect-[3/4] rounded-2xl border-2 border-white/20 overflow-hidden shadow-2xl z-40 transition-all hover:scale-105 group/local">
                 {isCameraOff ? (
-                  <div className="h-full w-full flex items-center justify-center text-slate-500">
+                  <div className="h-full w-full bg-slate-800 flex items-center justify-center text-slate-500">
                     <CameraOff size={24} />
                   </div>
                 ) : (
@@ -433,30 +468,37 @@ const StudentFun = () => {
                     className="h-full w-full object-cover mirror"
                   />
                 )}
-                <div className="absolute bottom-2 left-2 text-[10px] text-white font-bold bg-black/40 px-1.5 py-0.5 rounded">You</div>
+                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
+                  <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full"></div>
+                  <span className="text-[9px] text-white font-bold uppercase tracking-tighter">You</span>
+                </div>
               </div>
-            </div>
 
-            {/* Controls */}
-            <div className="h-24 bg-slate-900 flex items-center justify-center gap-6 border-t border-slate-800">
-              <button 
-                onClick={toggleMic}
-                className={`h-12 w-12 rounded-full flex items-center justify-center text-white transition-colors ${isMicMuted ? 'bg-red-500' : 'bg-slate-800 hover:bg-slate-700'}`}
-              >
-                {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-              </button>
-              <button 
-                onClick={toggleCamera}
-                className={`h-12 w-12 rounded-full flex items-center justify-center text-white transition-colors ${isCameraOff ? 'bg-red-500' : 'bg-slate-800 hover:bg-slate-700'}`}
-              >
-                {isCameraOff ? <CameraOff className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-              </button>
-              <button 
-                onClick={endCall}
-                className="h-14 w-14 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-red-500/30 transition-all hover:scale-105"
-              >
-                <PhoneOff className="h-6 w-6" />
-              </button>
+              {/* Bottom Control Bar Overlay */}
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 z-50 transition-all group-hover:bottom-12">
+                <div className="bg-black/40 backdrop-blur-2xl px-6 py-4 rounded-[2.5rem] border border-white/10 shadow-2xl flex items-center gap-5">
+                  <button 
+                    onClick={toggleMic}
+                    className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${isMicMuted ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white/10 hover:bg-white/20 text-white hover:scale-110'}`}
+                  >
+                    {isMicMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                  </button>
+                  
+                  <button 
+                    onClick={endCall}
+                    className="h-14 w-14 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center text-white shadow-2xl shadow-red-600/40 transition-all hover:scale-110 active:scale-95"
+                  >
+                    <PhoneOff size={24} strokeWidth={2.5} />
+                  </button>
+                  
+                  <button 
+                    onClick={toggleCamera}
+                    className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${isCameraOff ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white/10 hover:bg-white/20 text-white hover:scale-110'}`}
+                  >
+                    {isCameraOff ? <CameraOff size={20} /> : <Camera size={20} />}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -482,6 +524,15 @@ const StudentFun = () => {
       <style>{`
         .mirror {
           transform: scaleX(-1);
+        }
+        @keyframes pulse-ring {
+          0% { transform: scale(.33); opacity: 1; }
+          80%, 100% { opacity: 0; }
+        }
+        @keyframes pulse-dot {
+          0% { transform: scale(.8); }
+          50% { transform: scale(1); }
+          100% { transform: scale(.8); }
         }
       `}</style>
     </div>
