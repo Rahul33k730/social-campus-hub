@@ -19,6 +19,7 @@ const StudentFun = () => {
   const [isCameraOff, setIsCameraOff] = useState(false);
   
   const [partnerStream, setPartnerStream] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState('Disconnected');
   const partnerStreamRef = useRef();
   
   const socketRef = useRef();
@@ -161,11 +162,13 @@ const StudentFun = () => {
 
     peer.on('signal', (data) => {
       console.log('Generated local signal, sending to partner:', partnerId);
+      setConnectionStatus('Signaling...');
       socketRef.current.emit('signal', { to: partnerId, signal: data });
     });
 
     peer.on('stream', (remoteStream) => {
       console.log('Received remote partner stream');
+      setConnectionStatus('Stream Received');
       setPartnerStream(remoteStream);
       partnerStreamRef.current = remoteStream;
       if (partnerVideo.current) {
@@ -176,15 +179,18 @@ const StudentFun = () => {
 
     peer.on('connect', () => {
       console.log('Peer connection established');
+      setConnectionStatus('Connected');
     });
 
     peer.on('error', (err) => {
       console.error('Peer connection error:', err);
+      setConnectionStatus('Connection Failed');
       // Don't end call immediately, let's see what the error is
     });
 
     peer.on('close', () => {
       console.log('Peer connection closed');
+      setConnectionStatus('Closed');
       endCall();
     });
 
@@ -357,7 +363,8 @@ const StudentFun = () => {
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 bg-slate-800">
                   <User size={120} className="animate-pulse" />
                   <p className="mt-4 font-bold text-slate-500">Connecting to Partner...</p>
-                  <p className="text-[10px] text-slate-400 mt-2">Ensure both devices are on a stable network</p>
+                  <p className="text-[10px] text-sky-500 mt-2 font-mono uppercase tracking-widest">{connectionStatus}</p>
+                  <p className="text-[10px] text-slate-400 mt-4">Ensure both devices are on a stable network</p>
                   <button 
                     onClick={() => window.location.reload()}
                     className="mt-6 px-4 py-2 bg-slate-700 text-white text-xs rounded-full hover:bg-slate-600 transition-all"

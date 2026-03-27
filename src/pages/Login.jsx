@@ -91,10 +91,12 @@ const Login = () => {
       if (data.success) {
         if (isRegistering) {
           setIsRegistering(false);
-          setError('Registration successful! Please login.');
+          setSuccess('Registration successful! Please login.');
+          setIsLoading(false);
+          return;
         } else {
           // Login success
-          login(data.user.role, data.user.name); // You might want to update context to store more data
+          login(data.user.role, data.user.name);
           localStorage.setItem('token', data.token);
           navigate(`/${role}/dashboard`);
         }
