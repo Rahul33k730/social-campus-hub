@@ -31,7 +31,10 @@ const StudentFun = () => {
   const CALL_DURATION_LIMIT = 180; // 3 minutes limit (180 seconds)
 
   useEffect(() => {
-    socketRef.current = io(SOCKET_SERVER);
+    socketRef.current = io(SOCKET_SERVER, {
+      transports: ['websocket'],
+      upgrade: false
+    });
 
     socketRef.current.on('match_found', ({ partnerId, partnerData, initiator }) => {
       console.log('Match found:', partnerId, partnerData, initiator);
@@ -139,23 +142,25 @@ const StudentFun = () => {
   const createPeer = (partnerId, initiator) => {
     console.log('Creating peer for:', partnerId, 'Initiator:', initiator);
     
-    // Explicit STUN servers for more reliable connections
+    // Simplified peer configuration for maximum compatibility
     const peer = new Peer({
       initiator,
-      trickle: true,
-      stream: streamRef.current, // Use ref to ensure the stream is available
+      trickle: false, // Send full SDP in one go for better reliability between different devices
+      stream: streamRef.current,
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
           { urls: 'stun:stun.services.mozilla.com' },
         ]
       }
     });
 
     peer.on('signal', (data) => {
-      console.log('Emitting signal to:', partnerId);
+      console.log('Generated local signal, sending to partner:', partnerId);
       socketRef.current.emit('signal', { to: partnerId, signal: data });
     });
 
@@ -344,6 +349,7 @@ const StudentFun = () => {
                 ref={partnerVideo} 
                 autoPlay 
                 playsInline 
+                muted={false}
                 className="h-full w-full object-contain"
               />
               
@@ -351,6 +357,13 @@ const StudentFun = () => {
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 bg-slate-800">
                   <User size={120} className="animate-pulse" />
                   <p className="mt-4 font-bold text-slate-500">Connecting to Partner...</p>
+                  <p className="text-[10px] text-slate-400 mt-2">Ensure both devices are on a stable network</p>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="mt-6 px-4 py-2 bg-slate-700 text-white text-xs rounded-full hover:bg-slate-600 transition-all"
+                  >
+                    Refresh & Retry
+                  </button>
                 </div>
               )}
               
