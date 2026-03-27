@@ -18,6 +18,9 @@ const StudentFun = () => {
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   
+  const [partnerStream, setPartnerStream] = useState(null);
+  const partnerStreamRef = useRef();
+  
   const socketRef = useRef();
   const userVideo = useRef();
   const partnerVideo = useRef();
@@ -70,6 +73,15 @@ const StudentFun = () => {
       }
     }
   }, [status, stream]);
+
+  useEffect(() => {
+    if (status === 'in_call') {
+      if (partnerStreamRef.current && partnerVideo.current) {
+        partnerVideo.current.srcObject = partnerStreamRef.current;
+        partnerVideo.current.play().catch(e => console.error("Error playing partner video:", e));
+      }
+    }
+  }, [status, partnerStream]);
 
   useEffect(() => {
     let interval;
@@ -138,11 +150,12 @@ const StudentFun = () => {
       socketRef.current.emit('signal', { to: partnerId, signal: data });
     });
 
-    peer.on('stream', (partnerStream) => {
-      console.log('Received partner stream');
+    peer.on('stream', (remoteStream) => {
+      console.log('Received remote partner stream');
+      setPartnerStream(remoteStream);
+      partnerStreamRef.current = remoteStream;
       if (partnerVideo.current) {
-        partnerVideo.current.srcObject = partnerStream;
-        // Force play just in case
+        partnerVideo.current.srcObject = remoteStream;
         partnerVideo.current.play().catch(e => console.error("Error playing remote video:", e));
       }
     });
@@ -181,6 +194,8 @@ const StudentFun = () => {
     setStatus('idle');
     setCaller(null);
     setOfferSignal(null);
+    setPartnerStream(null);
+    partnerStreamRef.current = null;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -207,6 +222,8 @@ const StudentFun = () => {
     setStatus('idle');
     setCaller(null);
     setOfferSignal(null);
+    setPartnerStream(null);
+    partnerStreamRef.current = null;
     partnerIdRef.current = null;
     peerRef.current = null;
   };
