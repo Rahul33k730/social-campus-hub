@@ -67,21 +67,30 @@ const StudentFun = () => {
   }, []);
 
   useEffect(() => {
-    if (status === 'in_call' || status === 'searching') {
-      if (streamRef.current && userVideo.current) {
-        userVideo.current.srcObject = streamRef.current;
+    const attachStreams = () => {
+      if (status === 'in_call') {
+        if (partnerStreamRef.current && partnerVideo.current) {
+          console.log("Attaching partner stream via effect");
+          if (partnerVideo.current.srcObject !== partnerStreamRef.current) {
+            partnerVideo.current.srcObject = partnerStreamRef.current;
+          }
+          partnerVideo.current.play().catch(e => console.error("Error playing partner video:", e));
+        }
       }
-    }
-  }, [status, stream]);
+      if (status === 'in_call' || status === 'searching') {
+        if (streamRef.current && userVideo.current) {
+          if (userVideo.current.srcObject !== streamRef.current) {
+            userVideo.current.srcObject = streamRef.current;
+          }
+        }
+      }
+    };
 
-  useEffect(() => {
-    if (status === 'in_call') {
-      if (partnerStreamRef.current && partnerVideo.current) {
-        partnerVideo.current.srcObject = partnerStreamRef.current;
-        partnerVideo.current.play().catch(e => console.error("Error playing partner video:", e));
-      }
-    }
-  }, [status, partnerStream]);
+    attachStreams();
+    // Use an interval to keep trying for a few seconds to ensure attachment
+    const interval = setInterval(attachStreams, 1000);
+    return () => clearInterval(interval);
+  }, [status, partnerStream, stream]);
 
   useEffect(() => {
     let interval;
@@ -330,17 +339,17 @@ const StudentFun = () => {
         {status === 'in_call' && (
           <div className="absolute inset-0 flex flex-col">
             {/* Remote Video */}
-            <div className="flex-1 bg-slate-800 relative overflow-hidden">
+            <div className="flex-1 bg-slate-800 relative overflow-hidden flex items-center justify-center">
               <video 
                 ref={partnerVideo} 
                 autoPlay 
                 playsInline 
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
               
-              {!partnerVideo.current?.srcObject && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
-                  <User size={120} />
+              {!partnerStream && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 bg-slate-800">
+                  <User size={120} className="animate-pulse" />
                   <p className="mt-4 font-bold text-slate-500">Connecting to Partner...</p>
                 </div>
               )}

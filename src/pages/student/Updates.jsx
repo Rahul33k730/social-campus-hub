@@ -111,16 +111,16 @@ const StudentBuySell = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Phone Number</label>
-                <input 
-                  type="tel" 
-                  required
-                  placeholder="e.g. +91 9876543210"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  value={newItem.phone}
-                  onChange={(e) => setNewItem({...newItem, phone: e.target.value})}
-                />
-              </div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    required
+                    placeholder="Enter your contact number"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    value={newItem.phone}
+                    onChange={(e) => setNewItem({...newItem, phone: e.target.value})}
+                  />
+                </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
                 <textarea 

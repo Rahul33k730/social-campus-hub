@@ -106,7 +106,7 @@ const StudentLostFound = () => {
                   <input 
                     type="tel" 
                     required
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="Enter your contact number"
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
                     value={newItem.phone}
                     onChange={(e) => setNewItem({...newItem, phone: e.target.value})}

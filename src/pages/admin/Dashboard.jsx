@@ -838,7 +838,7 @@ const AdminDashboard = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Phone</label>
-                    <input type="text" value={serviceFormData.phone} onChange={(e) => setServiceFormData({...serviceFormData, phone: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="+91..." />
+                    <input type="text" value={serviceFormData.phone} onChange={(e) => setServiceFormData({...serviceFormData, phone: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Contact number" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label>
