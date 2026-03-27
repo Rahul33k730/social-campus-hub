@@ -156,10 +156,10 @@ const StudentFun = () => {
   const createPeer = (partnerId, initiator) => {
     console.log('Creating peer for:', partnerId, 'Initiator:', initiator);
     
-    // Updated peer configuration with more STUN servers
+    // Use trickle: false for more reliable (but slower) initial connection in restrictive networks
     const peer = new Peer({
       initiator,
-      trickle: true,
+      trickle: false,
       stream: streamRef.current,
       config: {
         iceServers: [
@@ -180,13 +180,14 @@ const StudentFun = () => {
           { urls: 'stun:stun.softjoys.com' },
           { urls: 'stun:stun.voipcheap.com' },
           { urls: 'stun:stun.voipstunt.com' }
-        ]
+        ],
+        iceTransportPolicy: 'all'
       }
     });
 
     peer.on('signal', (data) => {
-      console.log('Generated local signal, sending to partner:', partnerId, 'Signal type:', data.type || 'candidate');
-      setConnectionStatus(data.type === 'offer' ? 'Initiating...' : data.type === 'answer' ? 'Responding...' : 'Optimizing...');
+      console.log('Generated full signal, sending to partner:', partnerId, 'Signal type:', data.type);
+      setConnectionStatus(data.type === 'offer' ? 'Ready to Call' : 'Accepting...');
       socketRef.current.emit('signal', { to: partnerId, signal: data });
     });
 
@@ -258,6 +259,17 @@ const StudentFun = () => {
     setConnectionStatus('Connecting...');
     peerRef.current = createPeer(partnerIdRef.current, false);
     setOfferSignal(null);
+  };
+
+  const reconnectCall = () => {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+    }
+    setConnectionStatus('Reconnecting...');
+    // The initiator will re-create the peer
+    if (caller && partnerIdRef.current) {
+      peerRef.current = createPeer(partnerIdRef.current, true);
+    }
   };
 
   const skipCall = () => {
@@ -440,15 +452,23 @@ const StudentFun = () => {
                   <p className="text-sky-400 text-xs mt-2 font-mono font-bold uppercase tracking-[0.2em]">{connectionStatus}</p>
                   
                   <div className="mt-12 flex flex-col items-center gap-4">
-                    <p className="text-slate-500 text-[10px] max-w-xs text-center uppercase leading-loose tracking-widest">
-                      Optimizing Peer-to-Peer Tunneling for Campus Network
+                    <p className="text-slate-500 text-[10px] max-w-xs text-center uppercase leading-loose tracking-widest px-8">
+                      We're trying a stable connection. If it takes too long, try to reconnect or refresh.
                     </p>
-                    <button 
-                      onClick={() => window.location.reload()}
-                      className="bg-white/5 hover:bg-white/10 text-white/60 text-[10px] px-6 py-2 rounded-full border border-white/10 transition-all font-bold uppercase tracking-widest"
-                    >
-                      Troubleshoot Connection
-                    </button>
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={reconnectCall}
+                        className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] px-6 py-2 rounded-full transition-all font-bold uppercase tracking-widest shadow-lg shadow-sky-600/20"
+                      >
+                        Try Again
+                      </button>
+                      <button 
+                        onClick={() => window.location.reload()}
+                        className="bg-white/5 hover:bg-white/10 text-white/60 text-[10px] px-6 py-2 rounded-full border border-white/10 transition-all font-bold uppercase tracking-widest"
+                      >
+                        Refresh Page
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
