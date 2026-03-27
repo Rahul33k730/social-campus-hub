@@ -20,7 +20,9 @@ const StudentFun = () => {
   
   const [partnerStream, setPartnerStream] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Disconnected');
+  const [pendingSignals, setPendingSignals] = useState([]);
   const partnerStreamRef = useRef();
+  const pendingSignalsRef = useRef([]);
   
   const socketRef = useRef();
   const userVideo = useRef();
@@ -52,10 +54,15 @@ const StudentFun = () => {
     });
 
     socketRef.current.on('signal', ({ from, signal }) => {
+      console.log('Received signal from partner:', signal.type || 'candidate');
       if (peerRef.current) {
         peerRef.current.signal(signal);
-      } else if (signal.type === 'offer') {
-        setOfferSignal(signal);
+      } else {
+        console.log('Peer not ready, buffering signal');
+        pendingSignalsRef.current.push(signal);
+        if (signal.type === 'offer') {
+          setOfferSignal(signal);
+        }
       }
     });
 
@@ -65,8 +72,9 @@ const StudentFun = () => {
 
     return () => {
       socketRef.current.disconnect();
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
     };
   }, []);
@@ -168,14 +176,29 @@ const StudentFun = () => {
     });
 
     peer.on('stream', (remoteStream) => {
-      console.log('Received remote partner stream');
+      console.log('Received remote partner stream, tracks:', remoteStream.getTracks().length);
       setConnectionStatus('Stream Received');
       setPartnerStream(remoteStream);
       partnerStreamRef.current = remoteStream;
-      if (partnerVideo.current) {
-        partnerVideo.current.srcObject = remoteStream;
-        partnerVideo.current.play().catch(e => console.error("Error playing remote video:", e));
-      }
+      
+      // Use a timeout to ensure the video element is mounted and ready
+      setTimeout(() => {
+        if (partnerVideo.current) {
+          console.log("Setting srcObject for partner video");
+          partnerVideo.current.srcObject = remoteStream;
+          partnerVideo.current.play().catch(e => {
+            console.error("Error playing remote video:", e);
+            // If play fails, try again with muted if it was a permission issue
+            if (e.name === 'NotAllowedError') {
+              console.log("Attempting to play muted due to permission");
+              partnerVideo.current.muted = true;
+              partnerVideo.current.play().catch(pErr => console.error("Still failed to play even muted:", pErr));
+            }
+          });
+        } else {
+          console.warn("partnerVideo ref not available yet when stream received");
+        }
+      }, 500);
     });
 
     peer.on('connect', () => {
@@ -195,6 +218,19 @@ const StudentFun = () => {
       endCall();
     });
 
+    // Process any buffered signals that arrived before the peer was ready
+    if (pendingSignalsRef.current.length > 0) {
+      console.log(`Processing ${pendingSignalsRef.current.length} buffered signals`);
+      pendingSignalsRef.current.forEach(signal => {
+        try {
+          peer.signal(signal);
+        } catch (err) {
+          console.error("Error signaling buffered signal:", err);
+        }
+      });
+      pendingSignalsRef.current = [];
+    }
+
     return peer;
   };
 
@@ -205,10 +241,7 @@ const StudentFun = () => {
   const acceptCall = () => {
     setStatus('in_call');
     peerRef.current = createPeer(partnerIdRef.current, false);
-    if (offerSignal) {
-      peerRef.current.signal(offerSignal);
-      setOfferSignal(null);
-    }
+    setOfferSignal(null);
   };
 
   const skipCall = () => {
@@ -217,6 +250,7 @@ const StudentFun = () => {
     setOfferSignal(null);
     setPartnerStream(null);
     partnerStreamRef.current = null;
+    pendingSignalsRef.current = [];
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -247,6 +281,7 @@ const StudentFun = () => {
     partnerStreamRef.current = null;
     partnerIdRef.current = null;
     peerRef.current = null;
+    pendingSignalsRef.current = [];
   };
 
   const toggleMic = () => {
