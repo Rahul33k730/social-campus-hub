@@ -2,11 +2,13 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { Buffer } from 'buffer'
+import process from 'process'
 
-// Add global polyfill for simple-peer
-if (typeof global === 'undefined') {
-  window.global = window;
-}
+// Add global polyfills for simple-peer
+window.global = window;
+window.Buffer = Buffer;
+window.process = process;
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

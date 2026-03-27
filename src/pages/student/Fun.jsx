@@ -32,10 +32,11 @@ const StudentFun = () => {
   const CALL_DURATION_LIMIT = 180; // 3 minutes limit (180 seconds)
 
   useEffect(() => {
-    socketRef.current = io(SOCKET_SERVER, {
-      transports: ['websocket'],
-      upgrade: false
-    });
+      socketRef.current = io(SOCKET_SERVER, {
+        transports: ['websocket', 'polling'],
+        reconnectionAttempts: 5,
+        timeout: 10000
+      });
 
     socketRef.current.on('match_found', ({ partnerId, partnerData, initiator }) => {
       console.log('Match found:', partnerId, partnerData, initiator);
@@ -146,7 +147,7 @@ const StudentFun = () => {
     // Simplified peer configuration for maximum compatibility
     const peer = new Peer({
       initiator,
-      trickle: false, // Send full SDP in one go for better reliability between different devices
+      trickle: true,
       stream: streamRef.current,
       config: {
         iceServers: [
