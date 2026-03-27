@@ -64,10 +64,12 @@ const StudentFun = () => {
   }, []);
 
   useEffect(() => {
-    if (stream && userVideo.current) {
-      userVideo.current.srcObject = stream;
+    if (status === 'in_call' || status === 'searching') {
+      if (streamRef.current && userVideo.current) {
+        userVideo.current.srcObject = streamRef.current;
+      }
     }
-  }, [stream]);
+  }, [status, stream]);
 
   useEffect(() => {
     let interval;
@@ -89,9 +91,17 @@ const StudentFun = () => {
 
   const startSearching = async () => {
     try {
-      const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const currentStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { max: 30 } }, 
+        audio: true 
+      });
       setStream(currentStream);
       streamRef.current = currentStream;
+      
+      // Immediately set for preview if possible
+      if (userVideo.current) {
+        userVideo.current.srcObject = currentStream;
+      }
       
       setStatus('searching');
       socketRef.current.emit('find_match', {
@@ -118,6 +128,7 @@ const StudentFun = () => {
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun.services.mozilla.com' },
         ]
       }
     });
@@ -131,6 +142,8 @@ const StudentFun = () => {
       console.log('Received partner stream');
       if (partnerVideo.current) {
         partnerVideo.current.srcObject = partnerStream;
+        // Force play just in case
+        partnerVideo.current.play().catch(e => console.error("Error playing remote video:", e));
       }
     });
 
