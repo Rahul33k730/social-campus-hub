@@ -22,6 +22,7 @@ import sequelize from './config/database.js';
 import Visitor from './models/Visitor.js';
 import Admin from './models/Admin.js';
 import bcrypt from 'bcryptjs';
+import https from 'https';
 
 dotenv.config();
 
@@ -183,4 +184,18 @@ if (process.env.NODE_ENV === 'production') {
 
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server listening on port ${PORT}`);
+  
+  // Keep-Alive Mechanism for Render (prevent spin-down)
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL || 'https://pcucampus.online';
+  
+  if (RENDER_URL) {
+    setInterval(() => {
+      console.log('🔄 Self-pinging to keep the server alive...');
+      https.get(`${RENDER_URL}/ping`, (res) => {
+        console.log(`✅ Self-ping status: ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.error('❌ Self-ping error:', err.message);
+      });
+    }, 14 * 60 * 1000); // Ping every 14 minutes
+  }
 });
